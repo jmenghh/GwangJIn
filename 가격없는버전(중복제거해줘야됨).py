@@ -36,7 +36,103 @@ driver.find_element(By.XPATH, '//*[@id="info.main.options"]/li[2]/a').click()
 results = []
 
 # 페이지 그룹 기준 (1,6,11,16,...)
-for base_page in range(1, 36, 5):  # 1,6,11,... 기준
+# 예시: base_page=6일 때 offset=1부터 돌면 current_page=7부터 시작함
+for base_page in range(1, 36, 5):
+    if base_page > 1:
+        try:
+            next_arrow = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.ID, "info.search.page.next"))
+            )
+            next_arrow.click()
+            time.sleep(2)
+        except Exception as e:
+            print(f"{base_page}페이지 화살표 클릭 실패: {e}")
+            break
+
+    # ❗ base_page 그룹에서 첫 페이지는 이미 열려 있으니, offset을 0이 아닌 1부터 시작
+    start_offset = 0 if base_page == 1 else 1
+
+    for offset in range(start_offset, 5):  # 0~4면 5페이지 커버
+        current_page = base_page + offset
+
+        try:
+            page_buttons = driver.find_elements(By.CSS_SELECTOR, "#info.search.page a")
+            matched = False
+            for btn in page_buttons:
+                if btn.text == str(current_page):
+                    btn.click()
+                    matched = True
+                    break
+            if not matched:
+                print(f"{current_page}페이지 버튼 없음")
+                break
+
+            print(f"{current_page}페이지 크롤링 중...")
+            time.sleep(2)
+
+            items = driver.find_elements(By.CSS_SELECTOR, ".placelist .PlaceItem")
+            for item in items:
+                try:
+                    name = item.find_element(By.CSS_SELECTOR, ".head_item .link_name").text
+                    address = item.find_element(By.CSS_SELECTOR, ".addr p").text
+                    score_elem = item.find_elements(By.CSS_SELECTOR, ".rating .score em")
+                    score = score_elem[0].text if score_elem else "0.0"
+                    results.append((name, address, score))
+                except Exception as e:
+                    print("오류 발생:", e)
+                    continue
+        except Exception as e:
+            print(f"{current_page}페이지 오류 발생: {e}")
+            break
+
+    # 6,11,... 진입 시 화살표 눌러서 다음 페이지 그룹으로 이동
+    if base_page > 1:
+        try:
+            next_arrow = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.ID, "info.search.page.next"))
+            )
+            next_arrow.click()
+            time.sleep(2)
+        except Exception as e:
+            print(f"{base_page}페이지 화살표 클릭 실패: {e}")
+            break
+
+    # base_page에서 한 번만 클릭하고, 그 이후는 offset 이용해서 그냥 넘어감
+    for offset in range(5):
+        current_page = base_page + offset
+
+        # 페이지 그룹 넘어오면 바로 base_page는 클릭하지 말고 첫 번째 offset부터 시작하게 함
+        try:
+            # 페이지 버튼이 있을 때만 클릭
+            page_buttons = driver.find_elements(By.CSS_SELECTOR, "#info.search.page a")
+            matched = False
+            for btn in page_buttons:
+                if btn.text == str(current_page):
+                    btn.click()
+                    matched = True
+                    break
+            if not matched:
+                print(f"{current_page}페이지 버튼 없음")
+                break
+
+            print(f"{current_page}페이지 크롤링 중...")
+            time.sleep(2)
+
+            items = driver.find_elements(By.CSS_SELECTOR, ".placelist .PlaceItem")
+            for item in items:
+                try:
+                    name = item.find_element(By.CSS_SELECTOR, ".head_item .link_name").text
+                    address = item.find_element(By.CSS_SELECTOR, ".addr p").text
+                    score_elem = item.find_elements(By.CSS_SELECTOR, ".rating .score em")
+                    score = score_elem[0].text if score_elem else "0.0"
+                    results.append((name, address, score))
+                except Exception as e:
+                    print("오류 발생:", e)
+                    continue
+        except Exception as e:
+            print(f"{current_page}페이지 오류 발생: {e}")
+            break
+
     # base_page > 1이면 화살표 클릭해서 다음 페이지 그룹으로 이동
     if base_page > 1:
         try:
