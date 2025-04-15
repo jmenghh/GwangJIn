@@ -18,7 +18,7 @@ def extract_menu_and_price():
             EC.element_to_be_clickable((By.LINK_TEXT, "메뉴"))
         )
         menu_tab.click()
-        time.sleep(0.5)
+        time.sleep(2)
 
         # HTML 파싱
         soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -132,5 +132,5 @@ driver.quit()
 
 # CSV 저장
 df = pd.DataFrame(results, columns=["상호", "주소", "별점", "메뉴"])
-df.to_csv("{}.csv".format(search_query), index=False, encoding="utf-8-sig")
+df.to_csv("{0}.csv".format(search_query), index=False, encoding="utf-8-sig")
 print("CSV 저장 완료!")
