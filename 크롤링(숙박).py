@@ -10,38 +10,49 @@ from bs4 import BeautifulSoup
 import time
 import pandas as pd
 
-# ✅ 메뉴 + 가격 추출 함수
 def extract_menu_and_price():
     try:
-        # '메뉴' 탭 클릭
-        menu_tab = WebDriverWait(driver, 5).until(
-            EC.element_to_be_clickable((By.LINK_TEXT, "메뉴"))
+        # 탭 메뉴에서 '예약' 텍스트를 가진 link_tab 클릭
+        tab_links = driver.find_elements(By.CSS_SELECTOR, 'a.link_tab')
+        for link in tab_links:
+            if link.text.strip() == "예약":
+                link.click()
+                break
+
+        # 예약 리스트가 로딩되길 기다림
+        WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.info_booking"))
         )
-        menu_tab.click()
-        time.sleep(2)
+        time.sleep(1)
 
         # HTML 파싱
         soup = BeautifulSoup(driver.page_source, 'html.parser')
-        menu_items = soup.select("div.wrap_goods ul.list_goods li")
+        booking_items = soup.select("div.info_booking")
 
         results = []
-        for item in menu_items:
+        for item in booking_items:
             try:
-                name = item.select_one("strong.tit_item").text.strip()
-                price = item.select_one("p.desc_item").text.strip()
-                results.append({"메뉴": name, "가격": price})
+                title = item.select_one("strong.tit_item").text.strip()
+                desc = item.select_one("span.info_item").text.strip()
+                price = item.select_one("span.info_item2").text.strip()
+                results.append({"예약": title, "설명": desc, "가격": price})
             except:
                 continue
 
         return results
 
     except Exception as e:
-        print(f"[메뉴 추출 실패] {e}")
+        print(f"[예약 정보 추출 실패] {e}")
         return []
+
+
+
 
 # ✅ 크롬 옵션 설정
 options = Options()
 options.add_argument('--start-maximized')
+options.add_argument('--headless')
+options.add_argument('--disable-gpu')
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 driver.get("https://map.kakao.com/")
@@ -54,12 +65,17 @@ search_input.send_keys(search_query)
 search_input.send_keys(Keys.ENTER)
 
 # dimmedLayer 사라질 때까지 대기
+# dimmedLayer가 존재하면 클릭해서 제거
 try:
-    WebDriverWait(driver, 5).until(
-        EC.invisibility_of_element_located((By.ID, "dimmedLayer"))
+    dimmed = WebDriverWait(driver, 5).until(
+        EC.presence_of_element_located((By.ID, "dimmedLayer"))
     )
+    # JavaScript로 클릭
+    driver.execute_script("arguments[0].click();", dimmed)
+    time.sleep(1)  # 제거 기다리는 시간
 except:
-    pass
+    print("dimmedLayer 없거나 클릭 실패")
+
 
 # 장소 탭 클릭
 driver.find_element(By.XPATH, '//*[@id="info.main.options"]/li[2]/a').click()
@@ -100,14 +116,15 @@ for base_page in range(1, 36, 5):
                     # ✅ 상세보기 링크 클릭 (새 탭 열림)
                     detail_btn = item.find_element(By.CSS_SELECTOR, ".moreview")
                     driver.execute_script("arguments[0].click();", detail_btn)
-                    time.sleep(2)
+                    time.sleep(1)
 
                     # 탭 전환
                     driver.switch_to.window(driver.window_handles[-1])
 
                     # 메뉴 + 가격 크롤링
                     menu_data = extract_menu_and_price()
-                    menu_str = ", ".join([f"{m['메뉴']}({m['가격']})" for m in menu_data]) if menu_data else ""
+                    menu_str = ", ".join([f"{m['예약']} ({m['가격']})" for m in menu_data]) if menu_data else ""
+
 
                     # 결과 저장
                     results.append((name, address, score, menu_str))
