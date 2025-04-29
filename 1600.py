@@ -10,8 +10,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 # 1. CSV 파일 읽기
-df = pd.read_csv('통합.csv')  # 가게 이름이 들어있는 csv
-df = df.iloc[1000:2000,:]
+df = pd.read_csv('총점수가게명중복제거.csv') # 가게 이름이 들어있는 csv
+df = df.iloc[1200:]
 df['지역화폐'] = ''  # 결과를 저장할 새 열 추가
 # 크롬 설정
 options = Options()
@@ -70,8 +70,10 @@ for idx, row in df.iterrows():
 cols = list(df.columns)
 cols.insert(cols.index('가게명')+1,cols.pop(cols.index('지역화폐')))
 df = df[cols]
-df.to_csv('지역화폐_결과.csv', index=False, encoding = 'utf-8-sig')
+df.to_csv('지역화폐_결과1200~.csv', index=False, encoding = 'utf-8-sig')
 
 print('완료!')
 
 driver.quit()
+
+input('아무키나 누르십시오')
