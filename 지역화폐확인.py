@@ -11,7 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 # 1. CSV 파일 읽기
 df = pd.read_csv('통합.csv')  # 가게 이름이 들어있는 csv
-df = df.iloc[:1000,:]
+df = df.iloc[1000:2000,:]
 df['지역화폐'] = ''  # 결과를 저장할 새 열 추가
 # 크롬 설정
 options = Options()
